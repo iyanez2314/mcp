@@ -111,22 +111,6 @@ export default function getEkahiMcpServer() {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
-    mcpServer.registerTool("get_ekahi_deliverable", {
-        title: "Get Ekahi Deliverable",
-        description: "Fetch an Ekahi deliverable by ID",
-        inputSchema: { id: z.string() },
-    }, async ({ id }) => {
-        if (!id) {
-            throw new Error("ID parameter is required");
-        }
-        const deliverable = await fetchEkahiDeliverable(id);
-        if (!deliverable) {
-            throw new Error(`Deliverable with ID ${id} not found`);
-        }
-        return {
-            content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
-        };
-    });
     mcpServer.registerTool("get_filtered_ekahi_deliverables", {
         title: "Get Filtered Ekahi Deliverables",
         description: "Fetch Ekahi deliverables with optional filters. Use filters to search by accountability (e.g., 'system and integration'), status, or other fields.",
