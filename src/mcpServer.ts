@@ -73,9 +73,8 @@ export default function getEkahiMcpServer() {
     },
     async ({ city }) => {
       const users = await fetchEkahiUsers();
-      const data = await users.text();
       return {
-        content: [{ type: "text", text: data }],
+        content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
       };
     },
   );

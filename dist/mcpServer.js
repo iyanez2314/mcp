@@ -49,9 +49,8 @@ export default function getEkahiMcpServer() {
         description: "Fetch all Ekahi users",
     }, async ({ city }) => {
         const users = await fetchEkahiUsers();
-        const data = await users.text();
         return {
-            content: [{ type: "text", text: data }],
+            content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
         };
     });
     mcpServer.registerResource("ekahi_deliverables", "ekahi://deliverables", {
