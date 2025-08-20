@@ -1,10 +1,6 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-const EKAHI_API_URL = process.env.EKAHI_API_URL;
-const CLOUD_FN_TOKEN = process.env.CLOUD_FN_TOKEN;
-if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
-    throw new Error("EKAHI_API_URL and CLOUD_FN_TOKEN environment variables must be set");
-}
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, } from "./ekahi-fetches.js";
 export default function getEkahiMcpServer() {
     const mcpServer = new McpServer({
         name: "Ekahi MCP Server",
@@ -115,94 +111,76 @@ export default function getEkahiMcpServer() {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
-    mcpServer.registerTool("get_ekahi_deliverables", {
-        title: "Get Ekahi Deliverables",
-        description: "Fetch an Ekahi deliverables",
-    }, async () => {
-        const deliverable = await fetchEkahiDeliverables();
+    mcpServer.registerTool("get_ekahi_deliverable", {
+        title: "Get Ekahi Deliverable",
+        description: "Fetch an Ekahi deliverable by ID",
+        inputSchema: { id: z.string() },
+    }, async ({ id }) => {
+        if (!id) {
+            throw new Error("ID parameter is required");
+        }
+        const deliverable = await fetchEkahiDeliverable(id);
         if (!deliverable) {
-            throw new Error(`Unable To Get Ekahi Deliverables`);
+            throw new Error(`Deliverable with ID ${id} not found`);
         }
         return {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
+    mcpServer.registerTool("get_filtered_ekahi_deliverables", {
+        title: "Get Filtered Ekahi Deliverables",
+        description: "Fetch Ekahi deliverables with optional filters. Use filters to search by accountability (e.g., 'system and integration'), status, or other fields.",
+        inputSchema: {
+            filters: z
+                .array(z.object({
+                field: z
+                    .string()
+                    .describe("Field to filter on (e.g., 'accountableOu', 'status', 'title')"),
+                operator: z
+                    .enum([
+                    "=",
+                    "!=",
+                    ">",
+                    ">=",
+                    "<",
+                    "<=",
+                    "in",
+                    "not-in",
+                    "array-contains",
+                    "array-contains-any",
+                ])
+                    .describe("Comparison operator"),
+                value: z.any().describe("Value to filter by"),
+            }))
+                .optional()
+                .describe("Array of filter conditions"),
+            logicalOperator: z
+                .enum(["AND", "OR"])
+                .default("AND")
+                .describe("How to combine multiple filters"),
+        },
+    }, async ({ filters, logicalOperator = "AND" }) => {
+        // Convert the filters to the format your API expects
+        const filterGroup = filters && filters.length > 0
+            ? {
+                logicalOperator,
+                conditions: filters.map((f) => ({
+                    field: f.field,
+                    operator: f.operator,
+                    value: f.value,
+                })),
+            }
+            : undefined;
+        const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup);
+        if (!deliverables) {
+            throw new Error("Unable to get Ekahi deliverables");
+        }
+        return {
+            content: [
+                { type: "text", text: JSON.stringify(deliverables, null, 2) },
+            ],
+        };
+    });
     return mcpServer;
 }
-const fetchEkahiUsers = async () => {
-    try {
-        const response = await fetch(`${EKAHI_API_URL}/users`, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
-            },
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    }
-    catch (error) {
-        console.error("Error fetching users:", error);
-        return null;
-    }
-};
-const fetchEkahiUser = async (id) => {
-    try {
-        const response = await fetch(`${EKAHI_API_URL}/users/${id}`, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
-            },
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    }
-    catch (error) {
-        console.error("Error fetching user:", error);
-        return null;
-    }
-};
-const fetchEkahiDeliverable = async (id) => {
-    try {
-        const response = await fetch(`${EKAHI_API_URL}/deliverables/${id}`, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
-            },
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    }
-    catch (error) {
-        console.error(`Error fetching deliverable with ID ${id}:`, error);
-        return null;
-    }
-};
-const fetchEkahiDeliverables = async () => {
-    try {
-        const response = await fetch(`${EKAHI_API_URL}/deliverables`, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
-            },
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    }
-    catch (error) {
-        console.error("Error fetching deliverables:", error);
-        return null;
-    }
-};
 //# sourceMappingURL=mcpServer.js.map
