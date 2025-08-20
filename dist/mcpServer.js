@@ -1,4 +1,5 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 const EKAHI_API_URL = process.env.EKAHI_API_URL;
 const CLOUD_FN_TOKEN = process.env.CLOUD_FN_TOKEN;
 if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
@@ -44,15 +45,6 @@ export default function getEkahiMcpServer() {
             ],
         };
     });
-    mcpServer.registerTool("get_all_ekahi_users", {
-        title: "Get All Ekahi Users",
-        description: "Fetch all Ekahi users",
-    }, async ({ city }) => {
-        const users = await fetchEkahiUsers();
-        return {
-            content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
-        };
-    });
     mcpServer.registerResource("ekahi_deliverables", "ekahi://deliverables", {
         description: "Ekahi All Ekahi Deliverables",
         title: "Ekahi Deliverables",
@@ -86,6 +78,53 @@ export default function getEkahiMcpServer() {
                     text: JSON.stringify(deliverable, null, 2),
                 },
             ],
+        };
+    });
+    mcpServer.registerTool("get_all_ekahi_users", {
+        title: "Get All Ekahi Users",
+        description: "Fetch all Ekahi users",
+    }, async () => {
+        const users = await fetchEkahiUsers();
+        return {
+            content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_ekahi_user", {
+        title: "Get Ekahi User",
+        description: "Fetch all Ekahi users",
+        inputSchema: { id: z.string() },
+    }, async ({ id }) => {
+        const users = await fetchEkahiUser(id);
+        return {
+            content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_ekahi_deliverable", {
+        title: "Get Ekahi Deliverable",
+        description: "Fetch an Ekahi deliverable by ID",
+        inputSchema: { id: z.string() },
+    }, async ({ id }) => {
+        if (!id) {
+            throw new Error("ID parameter is required");
+        }
+        const deliverable = await fetchEkahiDeliverable(id);
+        if (!deliverable) {
+            throw new Error(`Deliverable with ID ${id} not found`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_ekahi_deliverables", {
+        title: "Get Ekahi Deliverables",
+        description: "Fetch an Ekahi deliverables",
+    }, async () => {
+        const deliverable = await fetchEkahiDeliverables();
+        if (!deliverable) {
+            throw new Error(`Unable To Get Ekahi Deliverables`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
     return mcpServer;
