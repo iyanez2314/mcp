@@ -91,10 +91,46 @@ const fetchEkahiDeliverables = async () => {
   }
 };
 
+const fetchComposeQueryFetch = async (
+  naturalLanguageQuery: string,
+  resource: string,
+) => {
+  try {
+    const response = await fetch(`${EKAHI_API_URL}/query/compose`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+      },
+      body: JSON.stringify({
+        resource: resource,
+        input: {
+          naturalLanguage: naturalLanguageQuery,
+        },
+        config: {
+          mode: "fetch",
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.dir(data, { depth: null });
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching compose query:", error);
+    return null;
+  }
+};
+
 const fetchEkahiDeliverablesWithFilters = async (
   filters?: FilterGroup,
   join?: string[],
 ) => {
+  console.log("Fetching Ekahi deliverables with filters:", filters, join);
   try {
     let url = `${EKAHI_API_URL}/deliverables`;
     const params = new URLSearchParams();
@@ -116,6 +152,8 @@ const fetchEkahiDeliverablesWithFilters = async (
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
+
+    console.log("Fetching Ekahi deliverables with filters:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -142,4 +180,5 @@ export {
   fetchEkahiDeliverable,
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
+  fetchComposeQueryFetch,
 };

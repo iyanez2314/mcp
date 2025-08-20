@@ -1,6 +1,6 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, } from "./ekahi-fetches.js";
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchComposeQueryFetch, } from "./ekahi-fetches.js";
 export default function getEkahiMcpServer() {
     const mcpServer = new McpServer({
         name: "Ekahi MCP Server",
@@ -111,55 +111,25 @@ export default function getEkahiMcpServer() {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
-    mcpServer.registerTool("get_filtered_ekahi_deliverables", {
+    mcpServer.registerTool("get_filtered_ekahi_deliverables_nl", {
         title: "Get Filtered Ekahi Deliverables",
-        description: "Fetch Ekahi deliverables with optional filters. Use filters to search by accountability (e.g., 'system and integration'), status, or other fields.",
+        description: "Takes in the natural language query and returns the deliverables that match the query",
         inputSchema: {
-            filters: z
-                .array(z.object({
-                field: z
-                    .string()
-                    .describe("Field to filter on (e.g., 'accountableOu', 'status', 'title')"),
-                operator: z
-                    .enum([
-                    "=",
-                    "!=",
-                    ">",
-                    ">=",
-                    "<",
-                    "<=",
-                    "in",
-                    "not-in",
-                    "array-contains",
-                    "array-contains-any",
-                ])
-                    .describe("Comparison operator"),
-                value: z.any().describe("Value to filter by"),
-            }))
-                .optional()
-                .describe("Array of filter conditions"),
-            logicalOperator: z
-                .enum(["AND", "OR"])
-                .default("AND")
-                .describe("How to combine multiple filters"),
-            join: z
-                .array(z.string())
-                .optional()
-                .describe("Fields to populate from document references (e.g., ['accountableOu', 'createdBy', 'assignedTo'])"),
+            resource: z
+                .enum(["deliverables", "users", "issues", "activities", "tasks"])
+                .describe("These are the resouces that can be queried"),
+            natrualLanguge: z
+                .string()
+                .describe("The query the user wants to make to preform the search on the deliverables"),
         },
-    }, async ({ filters, logicalOperator = "AND", join }) => {
-        // Convert the filters to the format your API expects
-        const filterGroup = filters && filters.length > 0
-            ? {
-                logicalOperator,
-                conditions: filters.map((f) => ({
-                    field: f.field,
-                    operator: f.operator,
-                    value: f.value,
-                })),
-            }
-            : undefined;
-        const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, join);
+    }, async ({ resource, natrualLanguge }) => {
+        if (!natrualLanguge ||
+            natrualLanguge.trim() === "" ||
+            natrualLanguge.length < 3 ||
+            !resource) {
+            throw new Error("One of the parameters is missing or invalid");
+        }
+        const deliverables = await fetchComposeQueryFetch(natrualLanguge, resource);
         if (!deliverables) {
             throw new Error("Unable to get Ekahi deliverables");
         }
@@ -169,6 +139,83 @@ export default function getEkahiMcpServer() {
             ],
         };
     });
+    // mcpServer.registerTool(
+    //   "get_filtered_ekahi_deliverables",
+    //   {
+    //     title: "Get Filtered Ekahi Deliverables",
+    //     description:
+    //       "Fetch Ekahi deliverables with optional filters. Use filters to search by accountability (e.g., 'system and integration'), status, or other fields.",
+    //     inputSchema: {
+    //       filters: z
+    //         .array(
+    //           z.object({
+    //             field: z
+    //               .string()
+    //               .describe(
+    //                 "Field to filter on (e.g., 'accountableOu', 'status', 'title')",
+    //               ),
+    //             operator: z
+    //               .enum([
+    //                 "=",
+    //                 "!=",
+    //                 ">",
+    //                 ">=",
+    //                 "<",
+    //                 "<=",
+    //                 "in",
+    //                 "not-in",
+    //                 "array-contains",
+    //                 "array-contains-any",
+    //               ])
+    //               .describe("Comparison operator"),
+    //             value: z.any().describe("Value to filter by"),
+    //           }),
+    //         )
+    //         .optional()
+    //         .describe("Array of filter conditions"),
+    //       logicalOperator: z
+    //         .enum(["AND", "OR"])
+    //         .default("AND")
+    //         .describe("How to combine multiple filters"),
+    //       join: z
+    //         .array(z.string())
+    //         .optional()
+    //         .describe(
+    //           "Fields to populate from document references (e.g., ['accountableOu', 'createdBy', 'assignedTo'])",
+    //         ),
+    //     },
+    //   },
+    //   async ({ filters, logicalOperator = "AND", join }) => {
+    //     // Convert the filters to the format your API expects
+    //     const filterGroup: FilterGroup | undefined =
+    //       filters && filters.length > 0
+    //         ? {
+    //             logicalOperator,
+    //             conditions: filters.map((f) => ({
+    //               field: f.field,
+    //               operator: f.operator,
+    //               value: f.value,
+    //             })),
+    //           }
+    //         : undefined;
+    //
+    //     console.log("Fetching Ekahi deliverables with filters:", filterGroup);
+    //
+    //     const deliverables = await fetchEkahiDeliverablesWithFilters(
+    //       filterGroup,
+    //       join,
+    //     );
+    //     if (!deliverables) {
+    //       throw new Error("Unable to get Ekahi deliverables");
+    //     }
+    //
+    //     return {
+    //       content: [
+    //         { type: "text", text: JSON.stringify(deliverables, null, 2) },
+    //       ],
+    //     };
+    //   },
+    // );
     return mcpServer;
 }
 //# sourceMappingURL=mcpServer.js.map
