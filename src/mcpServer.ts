@@ -44,7 +44,7 @@ export default function getEkahiMcpServer() {
     },
   );
 
-  mcpServer.registerResource(
+  mcpServer.resource(
     "ekahi_users",
     "ekahi://users",
     {
@@ -113,25 +113,6 @@ export default function getEkahiMcpServer() {
       };
     },
   );
-
-  // mcpServer.registerTool(
-  //   "getEkahiUsers",
-  //   {
-  //     title: "Get Ekahi Users",
-  //     description: "Fetches a list of Ekahi users",
-  //   },
-  //   async () => {
-  //     const users = await fetchEkahiUsers();
-  //
-  //     if (!users) {
-  //       throw new Error("Failed to fetch Ekahi users");
-  //     }
-  //
-  //     return {
-  //       content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
-  //     };
-  //   },
-  // );
 
   return mcpServer;
 }

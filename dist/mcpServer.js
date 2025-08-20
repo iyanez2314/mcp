@@ -29,7 +29,7 @@ export default function getEkahiMcpServer() {
             ],
         };
     });
-    mcpServer.registerResource("ekahi_users", "ekahi://users", {
+    mcpServer.resource("ekahi_users", "ekahi://users", {
         description: "Ekahi All Ekahi Users",
         title: "Ekahi Users",
         mimeType: "application/json",
@@ -79,24 +79,6 @@ export default function getEkahiMcpServer() {
             ],
         };
     });
-    // mcpServer.registerTool(
-    //   "getEkahiUsers",
-    //   {
-    //     title: "Get Ekahi Users",
-    //     description: "Fetches a list of Ekahi users",
-    //   },
-    //   async () => {
-    //     const users = await fetchEkahiUsers();
-    //
-    //     if (!users) {
-    //       throw new Error("Failed to fetch Ekahi users");
-    //     }
-    //
-    //     return {
-    //       content: [{ type: "text", text: JSON.stringify(users, null, 2) }],
-    //     };
-    //   },
-    // );
     return mcpServer;
 }
 const fetchEkahiUsers = async () => {

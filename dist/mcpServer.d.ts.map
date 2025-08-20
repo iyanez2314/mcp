@@ -1,1 +1,1 @@
-{"version":3,"file":"mcpServer.d.ts","sourceRoot":"","sources":["../src/mcpServer.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,SAAS,EAEV,MAAM,yCAAyC,CAAC;AAWjD,MAAM,CAAC,OAAO,UAAU,iBAAiB,cA0HxC"}
+{"version":3,"file":"mcpServer.d.ts","sourceRoot":"","sources":["../src/mcpServer.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,SAAS,EAEV,MAAM,yCAAyC,CAAC;AAWjD,MAAM,CAAC,OAAO,UAAU,iBAAiB,cAuGxC"}
