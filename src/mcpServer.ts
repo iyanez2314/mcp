@@ -65,6 +65,21 @@ export default function getEkahiMcpServer() {
     },
   );
 
+  mcpServer.registerTool(
+    "get_all_ekahi_users",
+    {
+      title: "Get All Ekahi Users",
+      description: "Fetch all Ekahi users",
+    },
+    async ({ city }) => {
+      const users = await fetchEkahiUsers();
+      const data = await users.text();
+      return {
+        content: [{ type: "text", text: data }],
+      };
+    },
+  );
+
   mcpServer.registerResource(
     "ekahi_deliverables",
     "ekahi://deliverables",
