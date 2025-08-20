@@ -92,8 +92,8 @@ const fetchEkahiDeliverables = async () => {
 };
 
 const fetchEkahiDeliverablesWithFilters = async (
-  filters?: FilterGroup, 
-  joins?: string[]
+  filters?: FilterGroup,
+  join?: string[],
 ) => {
   try {
     let url = `${EKAHI_API_URL}/deliverables`;
@@ -105,12 +105,12 @@ const fetchEkahiDeliverablesWithFilters = async (
     }
 
     // Add joins to populate document references
-    if (joins && joins.length > 0) {
-      joins.forEach(join => params.append("join", join));
+    if (join && join.length > 0) {
+      join.forEach((j) => params.append("join", j));
     } else {
       // Default joins for common document references
       const defaultJoins = ["accountableOu", "createdBy", "assignedTo"];
-      defaultJoins.forEach(join => params.append("join", join));
+      defaultJoins.forEach((join) => params.append("join", join));
     }
 
     if (params.toString()) {
