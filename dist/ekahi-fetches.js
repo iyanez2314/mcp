@@ -3,18 +3,6 @@ const CLOUD_FN_TOKEN = process.env.CLOUD_FN_TOKEN;
 if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
     throw new Error("EKAHI_API_URL and CLOUD_FN_TOKEN environment variables must be set");
 }
-var operator;
-(function (operator) {
-    operator["EQUALS"] = "=";
-    operator["NOT_EQUALS"] = "!=";
-    operator["GREATER_THAN"] = ">";
-    operator["LESS_THAN"] = "<";
-    operator["GREATER_THAN_OR_EQUAL"] = ">=";
-    operator["LESS_THAN_OR_EQUAL"] = "<=";
-    operator["IN"] = "IN";
-    operator["ARRAY_CONTAINS"] = "ARRAY_CONTAINS";
-    operator["ARRAY_CONTAINS_ANY"] = "ARRAY_CONTAINS_ANY";
-})(operator || (operator = {}));
 const fetchEkahiUsers = async () => {
     try {
         const response = await fetch(`${EKAHI_API_URL}/users`, {
@@ -91,13 +79,24 @@ const fetchEkahiDeliverables = async () => {
         return null;
     }
 };
-const fetchEkahiDeliverablesWithFilters = async (filters) => {
+const fetchEkahiDeliverablesWithFilters = async (filters, joins) => {
     try {
         let url = `${EKAHI_API_URL}/deliverables`;
-        // If filters are provided, add them as query parameters
+        const params = new URLSearchParams();
+        // Add filters if provided
         if (filters) {
-            const params = new URLSearchParams();
-            params.append('filters', JSON.stringify(filters));
+            params.append("filter", JSON.stringify(filters));
+        }
+        // Add joins to populate document references
+        if (joins && joins.length > 0) {
+            joins.forEach(join => params.append("join", join));
+        }
+        else {
+            // Default joins for common document references
+            const defaultJoins = ["accountableOu", "createdBy", "assignedTo"];
+            defaultJoins.forEach(join => params.append("join", join));
+        }
+        if (params.toString()) {
             url += `?${params.toString()}`;
         }
         const response = await fetch(url, {

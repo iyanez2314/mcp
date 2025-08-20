@@ -9,24 +9,6 @@ if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
   );
 }
 
-interface Filter {
-  field: string;
-  operator: operator;
-  value: string | number | boolean;
-}
-
-enum operator {
-  EQUALS = "=",
-  NOT_EQUALS = "!=",
-  GREATER_THAN = ">",
-  LESS_THAN = "<",
-  GREATER_THAN_OR_EQUAL = ">=",
-  LESS_THAN_OR_EQUAL = "<=",
-  IN = "IN",
-  ARRAY_CONTAINS = "ARRAY_CONTAINS",
-  ARRAY_CONTAINS_ANY = "ARRAY_CONTAINS_ANY",
-}
-
 const fetchEkahiUsers = async () => {
   try {
     const response = await fetch(`${EKAHI_API_URL}/users`, {
@@ -109,14 +91,29 @@ const fetchEkahiDeliverables = async () => {
   }
 };
 
-const fetchEkahiDeliverablesWithFilters = async (filters?: FilterGroup) => {
+const fetchEkahiDeliverablesWithFilters = async (
+  filters?: FilterGroup, 
+  joins?: string[]
+) => {
   try {
     let url = `${EKAHI_API_URL}/deliverables`;
-    
-    // If filters are provided, add them as query parameters
+    const params = new URLSearchParams();
+
+    // Add filters if provided
     if (filters) {
-      const params = new URLSearchParams();
-      params.append('filters', JSON.stringify(filters));
+      params.append("filter", JSON.stringify(filters));
+    }
+
+    // Add joins to populate document references
+    if (joins && joins.length > 0) {
+      joins.forEach(join => params.append("join", join));
+    } else {
+      // Default joins for common document references
+      const defaultJoins = ["accountableOu", "createdBy", "assignedTo"];
+      defaultJoins.forEach(join => params.append("join", join));
+    }
+
+    if (params.toString()) {
       url += `?${params.toString()}`;
     }
 

@@ -204,9 +204,15 @@ export default function getEkahiMcpServer() {
           .enum(["AND", "OR"])
           .default("AND")
           .describe("How to combine multiple filters"),
+        joins: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Fields to populate from document references (e.g., ['accountableOu', 'createdBy', 'assignedTo'])",
+          ),
       },
     },
-    async ({ filters, logicalOperator = "AND" }) => {
+    async ({ filters, logicalOperator = "AND", joins }) => {
       // Convert the filters to the format your API expects
       const filterGroup: FilterGroup | undefined =
         filters && filters.length > 0
@@ -220,7 +226,10 @@ export default function getEkahiMcpServer() {
             }
           : undefined;
 
-      const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup);
+      const deliverables = await fetchEkahiDeliverablesWithFilters(
+        filterGroup,
+        joins,
+      );
       if (!deliverables) {
         throw new Error("Unable to get Ekahi deliverables");
       }
