@@ -1,6 +1,6 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName,
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName,
 // fetchComposeQueryFetch,
  } from "./ekahi-fetches.js";
 import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
@@ -20,7 +20,7 @@ function containsValue(obj, searchValue) {
     // If it's an object, search in ALL fields recursively
     if (typeof obj === "object") {
         console.log(`    -> searching object with fields:`, Object.keys(obj));
-        return Object.values(obj).some(value => {
+        return Object.values(obj).some((value) => {
             if (value === null || value === undefined)
                 return false;
             // For nested objects/arrays, recurse
@@ -286,34 +286,69 @@ export default function getEkahiMcpServer() {
                 .describe("Value to search for in the selected fields"),
         },
     }, async ({ searchInFields, searchValue }) => {
-        // Step 1: Find the OU ID for the search value
         if (searchInFields.includes("accountableOu")) {
             const ous = await fetchOuByName(searchValue);
             if (!ous || ous.length === 0) {
                 return {
-                    content: [{ type: "text", text: "No organizational units found matching: " + searchValue }],
+                    content: [
+                        {
+                            type: "text",
+                            text: "No organizational units found matching: " + searchValue,
+                        },
+                    ],
                 };
             }
-            // Use the first matching OU
             const targetOu = ous[0];
-            // Step 2: Filter deliverables by OU ID
             const filterGroup = {
                 logicalOperator: "AND",
-                conditions: [{
+                conditions: [
+                    {
                         field: "accountableOu",
                         operator: "=",
-                        value: targetOu.id
-                    }]
+                        value: targetOu.id,
+                    },
+                ],
             };
-            // No joins needed for filtering - much more efficient!
             const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, []);
             return {
-                content: [{ type: "text", text: JSON.stringify(deliverables, null, 2) }],
+                content: [
+                    { type: "text", text: JSON.stringify(deliverables, null, 2) },
+                ],
             };
         }
-        // Fallback for other fields (not implemented yet)
         return {
-            content: [{ type: "text", text: "Search not implemented for fields: " + searchInFields.join(", ") }],
+            content: [
+                {
+                    type: "text",
+                    text: "Search not implemented for fields: " + searchInFields.join(", "),
+                },
+            ],
+        };
+    });
+    mcpServer.registerTool("get_deliverable_details", {
+        title: "Get Deliverable Details",
+        description: "Get detailed information about a specific deliverable by name",
+        inputSchema: {
+            deliverableName: z
+                .string()
+                .describe("Name or title of the deliverable to get details for"),
+        },
+    }, async ({ deliverableName }) => {
+        const deliverables = await fetchDeliverableByName(deliverableName);
+        if (!deliverables || deliverables.length === 0) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `No deliverable found matching: "${deliverableName}"`,
+                    },
+                ],
+            };
+        }
+        // Return the first match (most relevant)
+        const deliverable = deliverables[0];
+        return {
+            content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
     return mcpServer;

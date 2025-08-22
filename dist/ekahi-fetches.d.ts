@@ -5,5 +5,6 @@ declare const fetchEkahiDeliverable: (id: string) => Promise<any>;
 declare const fetchEkahiDeliverables: () => Promise<any>;
 declare const fetchEkahiDeliverablesWithFilters: (filters?: FilterGroup, join?: string[]) => Promise<any>;
 declare const fetchOuByName: (searchValue: string) => Promise<any>;
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, };
+declare const fetchDeliverableByName: (deliverableName: string) => Promise<any>;
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, };
 //# sourceMappingURL=ekahi-fetches.d.ts.map

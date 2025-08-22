@@ -222,7 +222,28 @@ const fetchOuByName = async (searchValue) => {
         return null;
     }
 };
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName,
+const fetchDeliverableByName = async (deliverableName) => {
+    try {
+        const url = `${EKAHI_API_URL}/deliverables?query=${encodeURIComponent(deliverableName)}&limit=5`;
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        const deliverables = response_1.data || response_1;
+        return deliverables;
+    }
+    catch (error) {
+        console.error("Error fetching deliverable by name:", error);
+        return null;
+    }
+};
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName,
 // fetchComposeQueryFetch,
  };
 //# sourceMappingURL=ekahi-fetches.js.map

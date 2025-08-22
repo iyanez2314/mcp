@@ -10,6 +10,7 @@ import {
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
   fetchOuByName,
+  fetchDeliverableByName,
   // fetchComposeQueryFetch,
 } from "./ekahi-fetches.js";
 
@@ -18,8 +19,12 @@ import resourceCapabilities from "./resourceCapabilities.json" with { type: "jso
 
 // Helper function to search for value within an object
 function containsValue(obj: any, searchValue: string): boolean {
-  console.log(`    containsValue called with:`, typeof obj, Array.isArray(obj) ? `array[${obj.length}]` : obj);
-  
+  console.log(
+    `    containsValue called with:`,
+    typeof obj,
+    Array.isArray(obj) ? `array[${obj.length}]` : obj,
+  );
+
   if (!obj) {
     console.log(`    -> false (null/undefined)`);
     return false;
@@ -36,19 +41,21 @@ function containsValue(obj: any, searchValue: string): boolean {
   // If it's an object, search in ALL fields recursively
   if (typeof obj === "object") {
     console.log(`    -> searching object with fields:`, Object.keys(obj));
-    return Object.values(obj).some(value => {
+    return Object.values(obj).some((value) => {
       if (value === null || value === undefined) return false;
-      
+
       // For nested objects/arrays, recurse
       if (typeof value === "object") {
         return containsValue(value, searchValue);
       }
-      
+
       // For primitives, do string comparison
       const valueStr = value.toString().toLowerCase();
       const matches = valueStr.includes(searchLower);
       if (matches) {
-        console.log(`    -> FOUND MATCH: "${valueStr}" contains "${searchLower}"`);
+        console.log(
+          `    -> FOUND MATCH: "${valueStr}" contains "${searchLower}"`,
+        );
       }
       return matches;
     });
@@ -57,7 +64,9 @@ function containsValue(obj: any, searchValue: string): boolean {
   // If it's a string/primitive, do direct comparison
   const objStr = obj.toString().toLowerCase();
   const matches = objStr.includes(searchLower);
-  console.log(`    -> primitive comparison: "${objStr}" contains "${searchLower}" = ${matches}`);
+  console.log(
+    `    -> primitive comparison: "${objStr}" contains "${searchLower}" = ${matches}`,
+  );
   return matches;
 }
 
@@ -357,40 +366,88 @@ export default function getEkahiMcpServer() {
       },
     },
     async ({ searchInFields, searchValue }) => {
-      // Step 1: Find the OU ID for the search value
       if (searchInFields.includes("accountableOu")) {
         const ous = await fetchOuByName(searchValue);
-        
+
         if (!ous || ous.length === 0) {
           return {
-            content: [{ type: "text", text: "No organizational units found matching: " + searchValue }],
+            content: [
+              {
+                type: "text",
+                text: "No organizational units found matching: " + searchValue,
+              },
+            ],
           };
         }
 
-        // Use the first matching OU
         const targetOu = ous[0];
 
-        // Step 2: Filter deliverables by OU ID
         const filterGroup: FilterGroup = {
           logicalOperator: "AND",
-          conditions: [{
-            field: "accountableOu",
-            operator: "=",
-            value: targetOu.id
-          }]
+          conditions: [
+            {
+              field: "accountableOu",
+              operator: "=",
+              value: targetOu.id,
+            },
+          ],
         };
 
-        // No joins needed for filtering - much more efficient!
-        const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, []);
+        const deliverables = await fetchEkahiDeliverablesWithFilters(
+          filterGroup,
+          [],
+        );
 
         return {
-          content: [{ type: "text", text: JSON.stringify(deliverables, null, 2) }],
+          content: [
+            { type: "text", text: JSON.stringify(deliverables, null, 2) },
+          ],
         };
       }
 
-      // Fallback for other fields (not implemented yet)
       return {
-        content: [{ type: "text", text: "Search not implemented for fields: " + searchInFields.join(", ") }],
+        content: [
+          {
+            type: "text",
+            text:
+              "Search not implemented for fields: " + searchInFields.join(", "),
+          },
+        ],
+      };
+    },
+  );
+
+  mcpServer.registerTool(
+    "get_deliverable_details",
+    {
+      title: "Get Deliverable Details",
+      description:
+        "Get detailed information about a specific deliverable by name",
+      inputSchema: {
+        deliverableName: z
+          .string()
+          .describe("Name or title of the deliverable to get details for"),
+      },
+    },
+    async ({ deliverableName }) => {
+      const deliverables = await fetchDeliverableByName(deliverableName);
+
+      if (!deliverables || deliverables.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No deliverable found matching: "${deliverableName}"`,
+            },
+          ],
+        };
+      }
+
+      // Return the first match (most relevant)
+      const deliverable = deliverables[0];
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
       };
     },
   );
