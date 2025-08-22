@@ -23,7 +23,8 @@ const fetchEkahiUsers = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const response_1 = await response.json();
+    const data = response_1.data || response_1;
     return data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -44,7 +45,8 @@ const fetchEkahiUser = async (id: string) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const response_1 = await response.json();
+    const data = response_1.data || response_1;
     return data;
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -63,7 +65,8 @@ const fetchEkahiDeliverable = async (id: string) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
+    const response_1 = await response.json();
+    const data = response_1.data || response_1;
     return data;
   } catch (error) {
     console.error(`Error fetching deliverable with ID ${id}:`, error);
@@ -73,19 +76,28 @@ const fetchEkahiDeliverable = async (id: string) => {
 
 const fetchEkahiDeliverables = async () => {
   try {
+    console.log("=== FETCH DELIVERABLES DEBUG ===");
     let url = `${EKAHI_API_URL}/deliverables`;
     const params = new URLSearchParams();
     const resouceConfig = resourceCapabilities.deliverables;
 
     const joinFields = resouceConfig?.refFields || [];
+    console.log("Available ref fields:", joinFields);
 
     if (joinFields.length > 0) {
       params.append("join", joinFields.join(","));
     }
 
+    // Add reasonable limit
+    params.append("limit", "50");
+
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
+
+    console.log("Final URL:", url);
+    console.log("Making request to API...");
+
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
@@ -93,12 +105,44 @@ const fetchEkahiDeliverables = async () => {
       },
     });
 
+    console.log("Response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers));
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.log("Error response body:", errorText);
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorText}`,
+      );
     }
 
-    const data = await response.json();
-    return data;
+    const responseText = await response.text();
+    console.log("Raw response length:", responseText.length);
+    console.log(
+      "Raw response preview:",
+      responseText.substring(0, 200) + "...",
+    );
+
+    try {
+      const response_1 = JSON.parse(responseText);
+      console.log("Response structure:", Object.keys(response_1));
+
+      // Extract deliverables from the data property
+      const deliverables = response_1.data || response_1;
+
+      console.log("Deliverables received:", deliverables?.length, "items");
+      console.log(
+        "Sample deliverable keys:",
+        deliverables?.[0] ? Object.keys(deliverables[0]) : "No data",
+      );
+      console.log("Sample accountableOu:", deliverables?.[0]?.accountableOu);
+      console.log("=== END FETCH DEBUG ===");
+      return deliverables;
+    } catch (parseError) {
+      console.log("JSON parse error:", parseError);
+      console.log("Full raw response:", responseText);
+      throw parseError;
+    }
   } catch (error) {
     console.error("Error fetching deliverables:", error);
     return null;
@@ -150,7 +194,6 @@ const fetchEkahiDeliverablesWithFilters = async (
   filters?: FilterGroup,
   join?: string[],
 ) => {
-  console.log("Fetching Ekahi deliverables with filters:", filters, join);
   try {
     let url = `${EKAHI_API_URL}/deliverables`;
     const params = new URLSearchParams();
@@ -160,20 +203,45 @@ const fetchEkahiDeliverablesWithFilters = async (
       params.append("filter", JSON.stringify(filters));
     }
 
-    // Add joins to populate document references
+    // Add joins to populate document references (only if specifically requested)
     if (join && join.length > 0) {
       params.append("join", join.join(","));
-    } else {
-      // Default joins for common document references
-      const defaultJoins = ["accountableOu", "createdBy", "assignedTo"];
-      params.append("join", defaultJoins.join(","));
     }
 
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
 
-    console.log("Fetching Ekahi deliverables with filters:", url);
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("Error response:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const response_1 = await response.json();
+    const data = response_1.data || response_1;
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching filtered deliverables:", error);
+    return null;
+  }
+};
+
+const fetchOuByName = async (searchValue: string) => {
+  try {
+    console.log("=== FETCHING OU BY NAME ===");
+    console.log("Searching for OU:", searchValue);
+
+    const url = `${EKAHI_API_URL}/ous?query=${encodeURIComponent(searchValue)}&limit=10`;
+    console.log("OU search URL:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -186,10 +254,16 @@ const fetchEkahiDeliverablesWithFilters = async (
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    const response_1 = await response.json();
+    const ous = response_1.data || response_1;
+
+    console.log("Found OUs:", ous?.length);
+    console.log("Sample OU:", ous?.[0]);
+    console.log("=== END OU FETCH ===");
+
+    return ous;
   } catch (error) {
-    console.error("Error fetching filtered deliverables:", error);
+    console.error("Error fetching OUs:", error);
     return null;
   }
 };
@@ -200,5 +274,6 @@ export {
   fetchEkahiDeliverable,
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
+  fetchOuByName,
   // fetchComposeQueryFetch,
 };

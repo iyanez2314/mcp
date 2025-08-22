@@ -9,6 +9,7 @@ import {
   fetchEkahiDeliverable,
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
+  fetchOuByName,
   // fetchComposeQueryFetch,
 } from "./ekahi-fetches.js";
 
@@ -17,17 +18,24 @@ import resourceCapabilities from "./resourceCapabilities.json" with { type: "jso
 
 // Helper function to search for value within an object
 function containsValue(obj: any, searchValue: string): boolean {
-  if (!obj) return false;
+  console.log(`    containsValue called with:`, typeof obj, Array.isArray(obj) ? `array[${obj.length}]` : obj);
+  
+  if (!obj) {
+    console.log(`    -> false (null/undefined)`);
+    return false;
+  }
 
   const searchLower = searchValue.toLowerCase();
 
   // If it's an array, search within each item
   if (Array.isArray(obj)) {
+    console.log(`    -> searching array with ${obj.length} items`);
     return obj.some((item) => containsValue(item, searchValue));
   }
 
   // If it's an object, search in ALL fields recursively
   if (typeof obj === "object") {
+    console.log(`    -> searching object with fields:`, Object.keys(obj));
     return Object.values(obj).some(value => {
       if (value === null || value === undefined) return false;
       
@@ -37,12 +45,20 @@ function containsValue(obj: any, searchValue: string): boolean {
       }
       
       // For primitives, do string comparison
-      return value.toString().toLowerCase().includes(searchLower);
+      const valueStr = value.toString().toLowerCase();
+      const matches = valueStr.includes(searchLower);
+      if (matches) {
+        console.log(`    -> FOUND MATCH: "${valueStr}" contains "${searchLower}"`);
+      }
+      return matches;
     });
   }
 
   // If it's a string/primitive, do direct comparison
-  return obj.toString().toLowerCase().includes(searchLower);
+  const objStr = obj.toString().toLowerCase();
+  const matches = objStr.includes(searchLower);
+  console.log(`    -> primitive comparison: "${objStr}" contains "${searchLower}" = ${matches}`);
+  return matches;
 }
 
 export default function getEkahiMcpServer() {
@@ -341,44 +357,40 @@ export default function getEkahiMcpServer() {
       },
     },
     async ({ searchInFields, searchValue }) => {
-      console.log("=== SEARCH DELIVERABLES DEBUG ===");
-      console.log("Search in fields:", searchInFields);
-      console.log("Search value:", searchValue);
-      
-      // Backend joins all ref fields automatically
-      const deliverables = await fetchEkahiDeliverables();
-      
-      console.log("Total deliverables fetched:", deliverables?.length);
-      console.log("Sample deliverable structure:", deliverables?.[0] ? Object.keys(deliverables[0]) : "No deliverables");
-      
-      // Log sample of the fields we're searching in
-      if (deliverables?.length > 0) {
-        searchInFields.forEach(field => {
-          console.log(`Sample ${field}:`, JSON.stringify(deliverables[0][field], null, 2));
-        });
+      // Step 1: Find the OU ID for the search value
+      if (searchInFields.includes("accountableOu")) {
+        const ous = await fetchOuByName(searchValue);
+        
+        if (!ous || ous.length === 0) {
+          return {
+            content: [{ type: "text", text: "No organizational units found matching: " + searchValue }],
+          };
+        }
+
+        // Use the first matching OU
+        const targetOu = ous[0];
+
+        // Step 2: Filter deliverables by OU ID
+        const filterGroup: FilterGroup = {
+          logicalOperator: "AND",
+          conditions: [{
+            field: "accountableOu",
+            operator: "=",
+            value: targetOu.id
+          }]
+        };
+
+        // No joins needed for filtering - much more efficient!
+        const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, []);
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(deliverables, null, 2) }],
+        };
       }
 
-      // Filter where any of the searchInFields contains searchValue
-      const filtered = deliverables?.filter((deliverable: any) => {
-        const matches = searchInFields.some((field) => {
-          const fieldValue = deliverable[field];
-          const hasMatch = containsValue(fieldValue, searchValue);
-          
-          if (hasMatch) {
-            console.log(`✓ Match found in ${field}:`, JSON.stringify(fieldValue, null, 2));
-          }
-          
-          return hasMatch;
-        });
-        
-        return matches;
-      });
-
-      console.log("Filtered results count:", filtered?.length);
-      console.log("=== END DEBUG ===");
-
+      // Fallback for other fields (not implemented yet)
       return {
-        content: [{ type: "text", text: JSON.stringify(filtered, null, 2) }],
+        content: [{ type: "text", text: "Search not implemented for fields: " + searchInFields.join(", ") }],
       };
     },
   );
