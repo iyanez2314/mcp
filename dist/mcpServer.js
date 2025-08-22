@@ -1,6 +1,8 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchComposeQueryFetch, } from "./ekahi-fetches.js";
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables,
+// fetchComposeQueryFetch,
+ } from "./ekahi-fetches.js";
 import resourceCapabilities from "./resourceCapabilities.json";
 // Helper function to search for value within an object
 function containsValue(obj, searchValue) {
@@ -135,34 +137,49 @@ export default function getEkahiMcpServer() {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
         };
     });
-    mcpServer.registerTool("get_filtered_ekahi_deliverables_nl", {
-        title: "Get Filtered Ekahi Deliverables",
-        description: "Takes in the natural language query and returns the deliverables that match the query",
-        inputSchema: {
-            resource: z
-                .enum(["deliverables", "users", "issues", "activities", "tasks"])
-                .describe("These are the resouces that can be queried"),
-            natrualLanguge: z
-                .string()
-                .describe("The query the user wants to make to preform the search on the deliverables"),
-        },
-    }, async ({ resource, natrualLanguge }) => {
-        if (!natrualLanguge ||
-            natrualLanguge.trim() === "" ||
-            natrualLanguge.length < 3 ||
-            !resource) {
-            throw new Error("One of the parameters is missing or invalid");
-        }
-        const deliverables = await fetchComposeQueryFetch(natrualLanguge, resource);
-        if (!deliverables) {
-            throw new Error("Unable to get Ekahi deliverables");
-        }
-        return {
-            content: [
-                { type: "text", text: JSON.stringify(deliverables, null, 2) },
-            ],
-        };
-    });
+    // mcpServer.registerTool(
+    //   "get_filtered_ekahi_deliverables_nl",
+    //   {
+    //     title: "Get Filtered Ekahi Deliverables",
+    //     description:
+    //       "Takes in the natural language query and returns the deliverables that match the query",
+    //     inputSchema: {
+    //       resource: z
+    //         .enum(["deliverables", "users", "issues", "activities", "tasks"])
+    //         .describe("These are the resouces that can be queried"),
+    //       natrualLanguge: z
+    //         .string()
+    //         .describe(
+    //           "The query the user wants to make to preform the search on the deliverables",
+    //         ),
+    //     },
+    //   },
+    //   async ({ resource, natrualLanguge }) => {
+    //     if (
+    //       !natrualLanguge ||
+    //       natrualLanguge.trim() === "" ||
+    //       natrualLanguge.length < 3 ||
+    //       !resource
+    //     ) {
+    //       throw new Error("One of the parameters is missing or invalid");
+    //     }
+    //
+    //     const deliverables = await fetchComposeQueryFetch(
+    //       natrualLanguge,
+    //       resource,
+    //     );
+    //
+    //     if (!deliverables) {
+    //       throw new Error("Unable to get Ekahi deliverables");
+    //     }
+    //
+    //     return {
+    //       content: [
+    //         { type: "text", text: JSON.stringify(deliverables, null, 2) },
+    //       ],
+    //     };
+    //   },
+    // );
     // mcpServer.registerTool(
     //   "get_filtered_ekahi_deliverables",
     //   {

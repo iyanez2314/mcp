@@ -9,7 +9,7 @@ import {
   fetchEkahiDeliverable,
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
-  fetchComposeQueryFetch,
+  // fetchComposeQueryFetch,
 } from "./ekahi-fetches.js";
 
 import { FilterCondition, FilterGroup } from "./queryFilters.js";
@@ -198,49 +198,49 @@ export default function getEkahiMcpServer() {
     },
   );
 
-  mcpServer.registerTool(
-    "get_filtered_ekahi_deliverables_nl",
-    {
-      title: "Get Filtered Ekahi Deliverables",
-      description:
-        "Takes in the natural language query and returns the deliverables that match the query",
-      inputSchema: {
-        resource: z
-          .enum(["deliverables", "users", "issues", "activities", "tasks"])
-          .describe("These are the resouces that can be queried"),
-        natrualLanguge: z
-          .string()
-          .describe(
-            "The query the user wants to make to preform the search on the deliverables",
-          ),
-      },
-    },
-    async ({ resource, natrualLanguge }) => {
-      if (
-        !natrualLanguge ||
-        natrualLanguge.trim() === "" ||
-        natrualLanguge.length < 3 ||
-        !resource
-      ) {
-        throw new Error("One of the parameters is missing or invalid");
-      }
-
-      const deliverables = await fetchComposeQueryFetch(
-        natrualLanguge,
-        resource,
-      );
-
-      if (!deliverables) {
-        throw new Error("Unable to get Ekahi deliverables");
-      }
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(deliverables, null, 2) },
-        ],
-      };
-    },
-  );
+  // mcpServer.registerTool(
+  //   "get_filtered_ekahi_deliverables_nl",
+  //   {
+  //     title: "Get Filtered Ekahi Deliverables",
+  //     description:
+  //       "Takes in the natural language query and returns the deliverables that match the query",
+  //     inputSchema: {
+  //       resource: z
+  //         .enum(["deliverables", "users", "issues", "activities", "tasks"])
+  //         .describe("These are the resouces that can be queried"),
+  //       natrualLanguge: z
+  //         .string()
+  //         .describe(
+  //           "The query the user wants to make to preform the search on the deliverables",
+  //         ),
+  //     },
+  //   },
+  //   async ({ resource, natrualLanguge }) => {
+  //     if (
+  //       !natrualLanguge ||
+  //       natrualLanguge.trim() === "" ||
+  //       natrualLanguge.length < 3 ||
+  //       !resource
+  //     ) {
+  //       throw new Error("One of the parameters is missing or invalid");
+  //     }
+  //
+  //     const deliverables = await fetchComposeQueryFetch(
+  //       natrualLanguge,
+  //       resource,
+  //     );
+  //
+  //     if (!deliverables) {
+  //       throw new Error("Unable to get Ekahi deliverables");
+  //     }
+  //
+  //     return {
+  //       content: [
+  //         { type: "text", text: JSON.stringify(deliverables, null, 2) },
+  //       ],
+  //     };
+  //   },
+  // );
 
   // mcpServer.registerTool(
   //   "get_filtered_ekahi_deliverables",
