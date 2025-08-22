@@ -13,7 +13,7 @@ import {
 } from "./ekahi-fetches.js";
 
 import { FilterCondition, FilterGroup } from "./queryFilters.js";
-import resourceCapabilities from "./resourceCapabilities.json";
+import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
 
 // Helper function to search for value within an object
 function containsValue(obj: any, searchValue: string): boolean {

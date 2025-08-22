@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables,
 // fetchComposeQueryFetch,
  } from "./ekahi-fetches.js";
-import resourceCapabilities from "./resourceCapabilities.json";
+import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
 // Helper function to search for value within an object
 function containsValue(obj, searchValue) {
     if (!obj)

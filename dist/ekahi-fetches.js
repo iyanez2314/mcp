@@ -1,6 +1,6 @@
 const EKAHI_API_URL = process.env.EKAHI_API_URL;
 const CLOUD_FN_TOKEN = process.env.CLOUD_FN_TOKEN;
-import resourceCapabilities from "./resourceCapabilities.json";
+import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
 if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
     throw new Error("EKAHI_API_URL and CLOUD_FN_TOKEN environment variables must be set");
 }

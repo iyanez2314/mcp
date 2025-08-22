@@ -2,7 +2,7 @@ import { FilterGroup } from "./queryFilters.js";
 import { getResourceAgentResponse } from "./openai/agents/resource-agent.js";
 const EKAHI_API_URL = process.env.EKAHI_API_URL;
 const CLOUD_FN_TOKEN = process.env.CLOUD_FN_TOKEN;
-import resourceCapabilities from "./resourceCapabilities.json";
+import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
 
 if (!EKAHI_API_URL || !CLOUD_FN_TOKEN) {
   throw new Error(
