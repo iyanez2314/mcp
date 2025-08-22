@@ -11,7 +11,38 @@ import {
   fetchEkahiDeliverablesWithFilters,
   fetchComposeQueryFetch,
 } from "./ekahi-fetches.js";
+
 import { FilterCondition, FilterGroup } from "./queryFilters.js";
+import resourceCapabilities from "./resourceCapabilities.json";
+
+// Helper function to search for value within an object
+function containsValue(obj: any, searchValue: string): boolean {
+  if (!obj) return false;
+
+  const searchLower = searchValue.toLowerCase();
+
+  // If it's an array, search within each item
+  if (Array.isArray(obj)) {
+    return obj.some((item) => containsValue(item, searchValue));
+  }
+
+  // If it's an object, search in common text fields
+  if (typeof obj === "object") {
+    const searchFields = [
+      "name",
+      "title",
+      "displayName",
+      "firstName",
+      "lastName",
+    ];
+    return searchFields.some((field) =>
+      obj[field]?.toString().toLowerCase().includes(searchLower),
+    );
+  }
+
+  // If it's a string/primitive, do direct comparison
+  return obj.toString().toLowerCase().includes(searchLower);
+}
 
 export default function getEkahiMcpServer() {
   const mcpServer = new McpServer({
@@ -288,6 +319,42 @@ export default function getEkahiMcpServer() {
   //     };
   //   },
   // );
+
+  const deliverableConfig = resourceCapabilities.deliverables;
+
+  mcpServer.registerTool(
+    "search_ekahi_deliverables",
+    {
+      title: "Search Ekahi Deliverables",
+      description: "Search deliverables within joined reference fields",
+      inputSchema: {
+        searchInFields: z
+          .array(z.enum(deliverableConfig.refFields as [string, ...string[]]))
+          .min(1)
+          .describe(
+            "Which reference fields to search within (e.g., ['accountableOu'] for accountability)",
+          ),
+        searchValue: z
+          .string()
+          .describe("Value to search for in the selected fields"),
+      },
+    },
+    async ({ searchInFields, searchValue }) => {
+      // Backend joins all ref fields automatically
+      const deliverables = await fetchEkahiDeliverables();
+
+      // Filter where any of the searchInFields contains searchValue
+      const filtered = deliverables?.filter((deliverable) =>
+        searchInFields.some((field) =>
+          containsValue(deliverable[field], searchValue),
+        ),
+      );
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(filtered, null, 2) }],
+      };
+    },
+  );
 
   return mcpServer;
 }

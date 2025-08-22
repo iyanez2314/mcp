@@ -1,3 +1,4 @@
 .env
 node_modules
 src/schema.zod.ts
+src/resourceCapabilities.json
