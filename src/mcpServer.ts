@@ -26,18 +26,19 @@ function containsValue(obj: any, searchValue: string): boolean {
     return obj.some((item) => containsValue(item, searchValue));
   }
 
-  // If it's an object, search in common text fields
+  // If it's an object, search in ALL fields recursively
   if (typeof obj === "object") {
-    const searchFields = [
-      "name",
-      "title",
-      "displayName",
-      "firstName",
-      "lastName",
-    ];
-    return searchFields.some((field) =>
-      obj[field]?.toString().toLowerCase().includes(searchLower),
-    );
+    return Object.values(obj).some(value => {
+      if (value === null || value === undefined) return false;
+      
+      // For nested objects/arrays, recurse
+      if (typeof value === "object") {
+        return containsValue(value, searchValue);
+      }
+      
+      // For primitives, do string comparison
+      return value.toString().toLowerCase().includes(searchLower);
+    });
   }
 
   // If it's a string/primitive, do direct comparison
@@ -340,15 +341,41 @@ export default function getEkahiMcpServer() {
       },
     },
     async ({ searchInFields, searchValue }) => {
+      console.log("=== SEARCH DELIVERABLES DEBUG ===");
+      console.log("Search in fields:", searchInFields);
+      console.log("Search value:", searchValue);
+      
       // Backend joins all ref fields automatically
       const deliverables = await fetchEkahiDeliverables();
+      
+      console.log("Total deliverables fetched:", deliverables?.length);
+      console.log("Sample deliverable structure:", deliverables?.[0] ? Object.keys(deliverables[0]) : "No deliverables");
+      
+      // Log sample of the fields we're searching in
+      if (deliverables?.length > 0) {
+        searchInFields.forEach(field => {
+          console.log(`Sample ${field}:`, JSON.stringify(deliverables[0][field], null, 2));
+        });
+      }
 
       // Filter where any of the searchInFields contains searchValue
-      const filtered = deliverables?.filter((deliverable: any) =>
-        searchInFields.some((field) =>
-          containsValue(deliverable[field], searchValue),
-        ),
-      );
+      const filtered = deliverables?.filter((deliverable: any) => {
+        const matches = searchInFields.some((field) => {
+          const fieldValue = deliverable[field];
+          const hasMatch = containsValue(fieldValue, searchValue);
+          
+          if (hasMatch) {
+            console.log(`✓ Match found in ${field}:`, JSON.stringify(fieldValue, null, 2));
+          }
+          
+          return hasMatch;
+        });
+        
+        return matches;
+      });
+
+      console.log("Filtered results count:", filtered?.length);
+      console.log("=== END DEBUG ===");
 
       return {
         content: [{ type: "text", text: JSON.stringify(filtered, null, 2) }],
