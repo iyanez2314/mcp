@@ -344,7 +344,7 @@ export default function getEkahiMcpServer() {
       const deliverables = await fetchEkahiDeliverables();
 
       // Filter where any of the searchInFields contains searchValue
-      const filtered = deliverables?.filter((deliverable) =>
+      const filtered = deliverables?.filter((deliverable: any) =>
         searchInFields.some((field) =>
           containsValue(deliverable[field], searchValue),
         ),

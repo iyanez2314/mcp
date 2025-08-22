@@ -106,45 +106,45 @@ const fetchEkahiDeliverables = async () => {
 };
 
 // TODO: this is more of a maybe it will work idk sttil need to get the NLP to work
-const fetchComposeQueryFetch = async (
-  naturalLanguageQuery: string,
-  resource: string,
-) => {
-  try {
-    // const resourceAgent = getResourceAgentResponse(naturalLanguageQuery);
-    //
-    // if (!resourceAgent) {
-    //   throw new Error("Resource agent response is null or undefined");
-    // }
-    //   const response = await fetch(`${EKAHI_API_URL}/query/compose`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
-    //     },
-    //     body: JSON.stringify({
-    //       resource: resource,
-    //       input: {
-    //         naturalLanguage: naturalLanguageQuery,
-    //       },
-    //       config: {
-    //         mode: "fetch",
-    //       },
-    //     }),
-    //   });
-    //
-    //   if (!response.ok) {
-    //     throw new Error(`HTTP error! status: ${response.status}`);
-    //   }
-    //
-    //   const data = await response.json();
-    //   console.dir(data, { depth: null });
-    //   return data.data;
-  } catch (error) {
-    console.error("Error fetching compose query:", error);
-    return null;
-  }
-};
+// const fetchComposeQueryFetch = async (
+//   naturalLanguageQuery: string,
+//   resource: string,
+// ) => {
+//   try {
+//     // const resourceAgent = getResourceAgentResponse(naturalLanguageQuery);
+//     //
+//     // if (!resourceAgent) {
+//     //   throw new Error("Resource agent response is null or undefined");
+//     // }
+//     //   const response = await fetch(`${EKAHI_API_URL}/query/compose`, {
+//     //     method: "POST",
+//     //     headers: {
+//     //       "Content-Type": "application/json",
+//     //       Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+//     //     },
+//     //     body: JSON.stringify({
+//     //       resource: resource,
+//     //       input: {
+//     //         naturalLanguage: naturalLanguageQuery,
+//     //       },
+//     //       config: {
+//     //         mode: "fetch",
+//     //       },
+//     //     }),
+//     //   });
+//     //
+//     //   if (!response.ok) {
+//     //     throw new Error(`HTTP error! status: ${response.status}`);
+//     //   }
+//     //
+//     //   const data = await response.json();
+//     //   console.dir(data, { depth: null });
+//     //   return data.data;
+//   } catch (error) {
+//     console.error("Error fetching compose query:", error);
+//     return null;
+//   }
+// };
 
 const fetchEkahiDeliverablesWithFilters = async (
   filters?: FilterGroup,
