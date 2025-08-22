@@ -1,6 +1,6 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchUserByName, fetchDeliverableByName, fetchByP3Name,
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchUserByName, fetchDeliverableByName, fetchByP3Name, fetchDeliverableIssues, fetchDeliverableTasks, fetchEkahiIssue, fetchEkahiTask,
 // fetchComposeQueryFetch,
  } from "./ekahi-fetches.js";
 import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
@@ -273,6 +273,19 @@ export default function getEkahiMcpServer() {
     //   },
     // );
     const deliverableConfig = resourceCapabilities.deliverables;
+    mcpServer.registerTool("search_ekahi_issues", {
+        title: "Search Ekahi Issues",
+        description: "Search issues within all fields",
+        inputSchema: {
+            searchValue: z
+                .string()
+                .describe("Value to search for in all issue fields"),
+        },
+    }, async ({ searchValue }) => {
+        return {
+            content: [{ type: "text", text: JSON.stringify(null, null, 2) }],
+        };
+    });
     mcpServer.registerTool("search_ekahi_deliverables", {
         title: "Search Ekahi Deliverables",
         description: "Search deliverables within joined reference fields",
@@ -362,6 +375,82 @@ export default function getEkahiMcpServer() {
         const deliverable = deliverables[0];
         return {
             content: [{ type: "text", text: JSON.stringify(deliverable, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_deliverable_issues", {
+        title: "Get Deliverable Issues",
+        description: "Fetch all issues associated with a specific deliverable",
+        inputSchema: {
+            deliverableId: z
+                .string()
+                .describe("ID of the deliverable to get issues for"),
+        },
+    }, async ({ deliverableId }) => {
+        if (!deliverableId) {
+            throw new Error("Deliverable ID parameter is required");
+        }
+        const issues = await fetchDeliverableIssues(deliverableId);
+        if (!issues) {
+            throw new Error(`Unable to fetch issues for deliverable ${deliverableId}`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(issues, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_deliverable_tasks", {
+        title: "Get Deliverable Tasks",
+        description: "Fetch all tasks associated with a specific deliverable",
+        inputSchema: {
+            deliverableId: z
+                .string()
+                .describe("ID of the deliverable to get tasks for"),
+        },
+    }, async ({ deliverableId }) => {
+        if (!deliverableId) {
+            throw new Error("Deliverable ID parameter is required");
+        }
+        const tasks = await fetchDeliverableTasks(deliverableId);
+        if (!tasks) {
+            throw new Error(`Unable to fetch tasks for deliverable ${deliverableId}`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(tasks, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_ekahi_issue", {
+        title: "Get Ekahi Issue",
+        description: "Fetch a single Ekahi issue by ID or name. If the input looks like an ID (alphanumeric), it will try ID lookup first, then fallback to name search. If it contains spaces or special characters, it will search by name.",
+        inputSchema: {
+            idOrName: z.string().describe("ID or name of the issue to fetch")
+        },
+    }, async ({ idOrName }) => {
+        if (!idOrName) {
+            throw new Error("ID or name parameter is required");
+        }
+        const issue = await fetchEkahiIssue(idOrName);
+        if (!issue) {
+            throw new Error(`Issue with ID/name "${idOrName}" not found`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(issue, null, 2) }],
+        };
+    });
+    mcpServer.registerTool("get_ekahi_task", {
+        title: "Get Ekahi Task",
+        description: "Fetch a single Ekahi task by ID or name. If the input looks like an ID (alphanumeric), it will try ID lookup first, then fallback to name search. If it contains spaces or special characters, it will search by name.",
+        inputSchema: {
+            idOrName: z.string().describe("ID or name of the task to fetch")
+        },
+    }, async ({ idOrName }) => {
+        if (!idOrName) {
+            throw new Error("ID or name parameter is required");
+        }
+        const task = await fetchEkahiTask(idOrName);
+        if (!task) {
+            throw new Error(`Task with ID/name "${idOrName}" not found`);
+        }
+        return {
+            content: [{ type: "text", text: JSON.stringify(task, null, 2) }],
         };
     });
     return mcpServer;

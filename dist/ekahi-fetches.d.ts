@@ -8,5 +8,9 @@ declare const fetchOuByName: (searchValue: string) => Promise<any>;
 declare const fetchDeliverableByName: (deliverableName: string) => Promise<any>;
 declare const fetchUserByName: (userName: string) => Promise<any>;
 declare const fetchByP3Name: (p3Name: string) => Promise<any>;
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, fetchUserByName, fetchByP3Name, };
+declare const fetchDeliverableIssues: (deliverableId: string) => Promise<any>;
+declare const fetchDeliverableTasks: (deliverableId: string) => Promise<any>;
+declare const fetchEkahiIssue: (idOrName: string) => Promise<any>;
+declare const fetchEkahiTask: (idOrName: string) => Promise<any>;
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, fetchUserByName, fetchByP3Name, fetchDeliverableIssues, fetchDeliverableTasks, fetchEkahiIssue, fetchEkahiTask, };
 //# sourceMappingURL=ekahi-fetches.d.ts.map

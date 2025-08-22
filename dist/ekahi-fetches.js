@@ -285,7 +285,173 @@ const fetchByP3Name = async (p3Name) => {
         return null;
     }
 };
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, fetchUserByName, fetchByP3Name,
+const fetchDeliverableIssues = async (deliverableId) => {
+    try {
+        const url = `${EKAHI_API_URL}/issues?filter=${encodeURIComponent(JSON.stringify({
+            logicalOperator: "AND",
+            conditions: [
+                {
+                    field: "deliverable",
+                    operator: "=",
+                    value: deliverableId
+                }
+            ]
+        }))}&limit=50`;
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        const issues = response_1.data || response_1;
+        return issues;
+    }
+    catch (error) {
+        console.error(`Error fetching issues for deliverable ${deliverableId}:`, error);
+        return null;
+    }
+};
+const fetchDeliverableTasks = async (deliverableId) => {
+    try {
+        const url = `${EKAHI_API_URL}/tasks?filter=${encodeURIComponent(JSON.stringify({
+            logicalOperator: "AND",
+            conditions: [
+                {
+                    field: "deliverable",
+                    operator: "=",
+                    value: deliverableId
+                }
+            ]
+        }))}&limit=50`;
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        const tasks = response_1.data || response_1;
+        return tasks;
+    }
+    catch (error) {
+        console.error(`Error fetching tasks for deliverable ${deliverableId}:`, error);
+        return null;
+    }
+};
+const fetchEkahiIssue = async (idOrName) => {
+    try {
+        // Check if it looks like an ID (assuming IDs are alphanumeric without spaces)
+        const isId = /^[a-zA-Z0-9_-]+$/.test(idOrName) && !idOrName.includes(' ');
+        let url;
+        if (isId) {
+            // Try as ID first
+            url = `${EKAHI_API_URL}/issues/${idOrName}`;
+        }
+        else {
+            // Use as search query
+            url = `${EKAHI_API_URL}/issues?query=${encodeURIComponent(idOrName)}&limit=1`;
+        }
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            // If ID lookup failed, try as name search
+            if (isId) {
+                console.log(`ID lookup failed for ${idOrName}, trying as name search...`);
+                const searchUrl = `${EKAHI_API_URL}/issues?query=${encodeURIComponent(idOrName)}&limit=1`;
+                const searchResponse = await fetch(searchUrl, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+                    },
+                });
+                if (searchResponse.ok) {
+                    const searchData = await searchResponse.json();
+                    const issues = searchData.data || searchData;
+                    return issues && issues.length > 0 ? issues[0] : null;
+                }
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        if (isId) {
+            return response_1.data || response_1;
+        }
+        else {
+            // For search results, return the first match
+            const issues = response_1.data || response_1;
+            return issues && issues.length > 0 ? issues[0] : null;
+        }
+    }
+    catch (error) {
+        console.error(`Error fetching issue with ID/name ${idOrName}:`, error);
+        return null;
+    }
+};
+const fetchEkahiTask = async (idOrName) => {
+    try {
+        // Check if it looks like an ID (assuming IDs are alphanumeric without spaces)
+        const isId = /^[a-zA-Z0-9_-]+$/.test(idOrName) && !idOrName.includes(' ');
+        let url;
+        if (isId) {
+            // Try as ID first
+            url = `${EKAHI_API_URL}/tasks/${idOrName}`;
+        }
+        else {
+            // Use as search query
+            url = `${EKAHI_API_URL}/tasks?query=${encodeURIComponent(idOrName)}&limit=1`;
+        }
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            // If ID lookup failed, try as name search
+            if (isId) {
+                console.log(`ID lookup failed for ${idOrName}, trying as name search...`);
+                const searchUrl = `${EKAHI_API_URL}/tasks?query=${encodeURIComponent(idOrName)}&limit=1`;
+                const searchResponse = await fetch(searchUrl, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+                    },
+                });
+                if (searchResponse.ok) {
+                    const searchData = await searchResponse.json();
+                    const tasks = searchData.data || searchData;
+                    return tasks && tasks.length > 0 ? tasks[0] : null;
+                }
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        if (isId) {
+            return response_1.data || response_1;
+        }
+        else {
+            // For search results, return the first match
+            const tasks = response_1.data || response_1;
+            return tasks && tasks.length > 0 ? tasks[0] : null;
+        }
+    }
+    catch (error) {
+        console.error(`Error fetching task with ID/name ${idOrName}:`, error);
+        return null;
+    }
+};
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, fetchUserByName, fetchByP3Name, fetchDeliverableIssues, fetchDeliverableTasks, fetchEkahiIssue, fetchEkahiTask,
 // fetchComposeQueryFetch,
  };
 //# sourceMappingURL=ekahi-fetches.js.map
