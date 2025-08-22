@@ -243,7 +243,49 @@ const fetchDeliverableByName = async (deliverableName) => {
         return null;
     }
 };
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName,
+const fetchUserByName = async (userName) => {
+    try {
+        const url = `${EKAHI_API_URL}/users?query=${encodeURIComponent(userName)}&limit=10`;
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        const users = response_1.data || response_1;
+        return users;
+    }
+    catch (error) {
+        console.error("Error fetching user by name:", error);
+        return null;
+    }
+};
+const fetchByP3Name = async (p3Name) => {
+    try {
+        const url = `${EKAHI_API_URL}/p3-entities?query=${encodeURIComponent(p3Name)}&limit=10`;
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${CLOUD_FN_TOKEN}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response_1 = await response.json();
+        const users = response_1.data || response_1;
+        return users;
+    }
+    catch (error) {
+        console.error("Error fetching user by name:", error);
+        return null;
+    }
+};
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName, fetchUserByName, fetchByP3Name,
 // fetchComposeQueryFetch,
  };
 //# sourceMappingURL=ekahi-fetches.js.map

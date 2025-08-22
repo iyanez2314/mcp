@@ -10,7 +10,9 @@ import {
   fetchEkahiDeliverables,
   fetchEkahiDeliverablesWithFilters,
   fetchOuByName,
+  fetchUserByName,
   fetchDeliverableByName,
+  fetchByP3Name,
   // fetchComposeQueryFetch,
 } from "./ekahi-fetches.js";
 
@@ -366,52 +368,63 @@ export default function getEkahiMcpServer() {
       },
     },
     async ({ searchInFields, searchValue }) => {
-      if (searchInFields.includes("accountableOu")) {
-        const ous = await fetchOuByName(searchValue);
+      const filterConditions: FilterCondition[] = [];
 
-        if (!ous || ous.length === 0) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "No organizational units found matching: " + searchValue,
-              },
-            ],
-          };
+      for (const field of searchInFields) {
+        let entityId = null;
+
+        // Handle different ref field types
+        if (field === "accountableOu") {
+          const ous = await fetchOuByName(searchValue);
+          if (ous && ous.length > 0) {
+            entityId = ous[0].id;
+          }
+        } else if (field === "createdBy" || field === "modifiedBy") {
+          const users = await fetchUserByName(searchValue);
+          if (users && users.length > 0) {
+            entityId = users[0].id;
+          }
+        } else if (field === "p3") {
+          const p3Entities = await fetchByP3Name(searchValue);
+          if (p3Entities && p3Entities.length > 0) {
+            entityId = p3Entities[0].id;
+          }
         }
 
-        const targetOu = ous[0];
+        if (entityId) {
+          filterConditions.push({
+            field: field,
+            operator: "=",
+            value: entityId,
+          });
+        }
+      }
 
-        const filterGroup: FilterGroup = {
-          logicalOperator: "AND",
-          conditions: [
-            {
-              field: "accountableOu",
-              operator: "=",
-              value: targetOu.id,
-            },
-          ],
-        };
-
-        const deliverables = await fetchEkahiDeliverablesWithFilters(
-          filterGroup,
-          [],
-        );
-
+      if (filterConditions.length === 0) {
         return {
           content: [
-            { type: "text", text: JSON.stringify(deliverables, null, 2) },
+            {
+              type: "text",
+              text: `No matching entities found for "${searchValue}" in fields: ${searchInFields.join(", ")}`,
+            },
           ],
         };
       }
 
+      // Create filter group - use OR if multiple fields, AND if single field
+      const filterGroup: FilterGroup = {
+        logicalOperator: searchInFields.length > 1 ? "OR" : "AND",
+        conditions: filterConditions,
+      };
+
+      const deliverables = await fetchEkahiDeliverablesWithFilters(
+        filterGroup,
+        [],
+      );
+
       return {
         content: [
-          {
-            type: "text",
-            text:
-              "Search not implemented for fields: " + searchInFields.join(", "),
-          },
+          { type: "text", text: JSON.stringify(deliverables, null, 2) },
         ],
       };
     },

@@ -1,6 +1,6 @@
 import { McpServer, ResourceTemplate, } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchDeliverableByName,
+import { fetchEkahiUser, fetchEkahiUsers, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchOuByName, fetchUserByName, fetchDeliverableByName, fetchByP3Name,
 // fetchComposeQueryFetch,
  } from "./ekahi-fetches.js";
 import resourceCapabilities from "./resourceCapabilities.json" with { type: "json" };
@@ -286,42 +286,55 @@ export default function getEkahiMcpServer() {
                 .describe("Value to search for in the selected fields"),
         },
     }, async ({ searchInFields, searchValue }) => {
-        if (searchInFields.includes("accountableOu")) {
-            const ous = await fetchOuByName(searchValue);
-            if (!ous || ous.length === 0) {
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: "No organizational units found matching: " + searchValue,
-                        },
-                    ],
-                };
+        const filterConditions = [];
+        for (const field of searchInFields) {
+            let entityId = null;
+            // Handle different ref field types
+            if (field === "accountableOu") {
+                const ous = await fetchOuByName(searchValue);
+                if (ous && ous.length > 0) {
+                    entityId = ous[0].id;
+                }
             }
-            const targetOu = ous[0];
-            const filterGroup = {
-                logicalOperator: "AND",
-                conditions: [
+            else if (field === "createdBy" || field === "modifiedBy") {
+                const users = await fetchUserByName(searchValue);
+                if (users && users.length > 0) {
+                    entityId = users[0].id;
+                }
+            }
+            else if (field === "p3") {
+                const p3Entities = await fetchByP3Name(searchValue);
+                if (p3Entities && p3Entities.length > 0) {
+                    entityId = p3Entities[0].id;
+                }
+            }
+            if (entityId) {
+                filterConditions.push({
+                    field: field,
+                    operator: "=",
+                    value: entityId,
+                });
+            }
+        }
+        if (filterConditions.length === 0) {
+            return {
+                content: [
                     {
-                        field: "accountableOu",
-                        operator: "=",
-                        value: targetOu.id,
+                        type: "text",
+                        text: `No matching entities found for "${searchValue}" in fields: ${searchInFields.join(", ")}`,
                     },
                 ],
             };
-            const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, []);
-            return {
-                content: [
-                    { type: "text", text: JSON.stringify(deliverables, null, 2) },
-                ],
-            };
         }
+        // Create filter group - use OR if multiple fields, AND if single field
+        const filterGroup = {
+            logicalOperator: searchInFields.length > 1 ? "OR" : "AND",
+            conditions: filterConditions,
+        };
+        const deliverables = await fetchEkahiDeliverablesWithFilters(filterGroup, []);
         return {
             content: [
-                {
-                    type: "text",
-                    text: "Search not implemented for fields: " + searchInFields.join(", "),
-                },
+                { type: "text", text: JSON.stringify(deliverables, null, 2) },
             ],
         };
     });
