@@ -169,5 +169,7 @@ const fetchEkahiDeliverablesWithFilters = async (filters, join) => {
         return null;
     }
 };
-export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters, fetchComposeQueryFetch, };
+export { fetchEkahiUsers, fetchEkahiUser, fetchEkahiDeliverable, fetchEkahiDeliverables, fetchEkahiDeliverablesWithFilters,
+// fetchComposeQueryFetch,
+ };
 //# sourceMappingURL=ekahi-fetches.js.map
